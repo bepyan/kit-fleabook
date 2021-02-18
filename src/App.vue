@@ -1,11 +1,26 @@
 <template>
   <div id='app'>
-    <router-view/>
+    <Nav />
+    <router-view :key="$route.fullPath"/>
   </div>
 </template>
 
 <script>
+import Nav from '@@/Nav'
 export default {
-  name: 'app'
+  name: 'app',
+  components: {
+    Nav,
+  }
 }
 </script>
+
+
+<style>
+#app{
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+}
+</style>
