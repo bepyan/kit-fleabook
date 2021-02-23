@@ -1,5 +1,7 @@
 <template>
-  <router-view></router-view>
+  <v-app>
+    <router-view></router-view>
+  </v-app>
   <!-- <v-app>
     <v-app-bar absolute color="#81BEF7" dark app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"> </v-app-bar-nav-icon>
