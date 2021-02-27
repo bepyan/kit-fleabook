@@ -1,28 +1,28 @@
 <template>
-  <div id="book_info_wrap">
-    <div id="book_info">
+  <div id="bookInfoWrap">
+    <div id="bookInfo">
       <div style="width: min(90vw, 360px)"></div>
       <div>
-        <div id="titld_div">
-          <a id="title">공학 수학</a>
-          <a id="available"> 예약 가능</a>
+        <div id="titleDiv">
+          <span id="title">{{ bookTitle }}</span>
+          <span id="available">{{ isRsv }}</span>
         </div>
         <v-chip color="gray" label small id="writer" class="chips">
           <v-icon left> mdi-label </v-icon>
-          저자 : 조우성
+          저자 : {{ bookWriter }}
         </v-chip>
         <v-chip color="gray" label small id="publisher" class="chips">
           <v-icon left> mdi-label </v-icon>
-          출판사 : 금오공대
+          출판사 : {{ bookPublisher }}
         </v-chip>
       </div>
       <v-divider id="divider"></v-divider>
-      <div id="stock_title">
+      <div id="stockTitle">
         <p>재고 리스트</p>
-        <p id="stock_cnt">(남은재고 : 3)</p>
+        <p id="stockCnt">(남은재고 : {{ stockList.length }})</p>
       </div>
-      <div id="stock_table_div">
-        <v-simple-table id="stock_table" dense>
+      <div id="stockTableDiv" v-if="isExistStock">
+        <v-simple-table id="stockTable" dense>
           <template v-slot:default>
             <thead>
               <tr>
@@ -32,7 +32,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="(stock, index) in stock_list"
+                v-for="(stock, index) in stockList"
                 :key="(stock, index)"
                 v-bind:id="index"
               >
@@ -44,43 +44,46 @@
         </v-simple-table>
       </div>
       <v-divider id="divider"></v-divider>
-      <div id="stock_title">
+      <div id="stockTitle">
         <p>예약하기</p>
       </div>
-      <div data-app>
+      <div data-app :disabled="isRsvDisable">
         <v-menu
-          ref="menu"
-          v-model="menu"
+          ref="menuRef"
+          v-model="dateMenu"
           :close-on-content-click="false"
-          :return-value.sync="dates"
+          :return-value.sync="date"
           transition="scale-transition"
           offset-y
           min-width="auto"
         >
           <template v-slot:activator="{ on, attrs }">
             <v-combobox
-              v-model="dates"
+              v-model="date"
               label="날짜를 선택해주세요"
               prepend-icon="mdi-calendar"
               readonly
               v-bind="attrs"
               v-on="on"
+              :disabled="isRsvDisable"
             ></v-combobox>
           </template>
           <v-date-picker
-            v-model="dates"
+            v-model="date"
             no-title
             scrollable
-            min="2021-03-01"
+            min="2021-03-08"
             max="2021-03-31"
           >
             <v-spacer></v-spacer>
-            <v-btn text color="primary" @click="menu = false"> Cancel </v-btn>
+            <v-btn text color="primary" @click="dateMenu = false">
+              Cancel
+            </v-btn>
             <v-btn
               text
               color="primary"
               @click="
-                $refs.menu.save(dates);
+                $refs.menuRef.save(date);
                 isClickedDate = true;
               "
             >
@@ -97,9 +100,9 @@
             </thead>
             <tbody>
               <tr>
-                <td id="time_list">
+                <td id="timeList">
                   <span
-                    v-for="(rsv, index) in rsv_list"
+                    v-for="(rsv, index) in rsvList"
                     :key="(rsv, index)"
                     v-bind:id="index"
                   >
@@ -111,8 +114,8 @@
           </template>
         </v-simple-table>
         <v-dialog
-          ref="dialog"
-          v-model="modal"
+          ref="dialogRef"
+          v-model="timeModal"
           :return-value.sync="time"
           persistent
           width="290px"
@@ -125,10 +128,11 @@
               readonly
               v-bind="attrs"
               v-on="on"
+              :disabled="isRsvDisable"
             ></v-text-field>
           </template>
           <v-time-picker
-            v-if="modal"
+            v-if="timeModal"
             v-model="time"
             full-width
             format="24hr"
@@ -136,87 +140,169 @@
             max="17:00"
           >
             <v-spacer></v-spacer>
-            <v-btn text color="primary" @click="modal = false"> Cancel </v-btn>
-            <v-btn text color="primary" @click="$refs.dialog.save(time)">
+            <v-btn text color="primary" @click="timeModal = false">
+              Cancel
+            </v-btn>
+            <v-btn text color="primary" @click="$refs.dialogRef.save(time)">
               OK
             </v-btn>
           </v-time-picker>
         </v-dialog>
+        <v-text-field
+          v-model="studentId"
+          label="학번입력"
+          hide-details="auto"
+          :disabled="isRsvDisable"
+          :rules="[rules.sIdReq]"
+        ></v-text-field>
+        <v-text-field
+          v-model="password"
+          label="예약 비밀번호 입력"
+          hint="적어도 8자리 이상 입력해주세요"
+          @click:append="isDisplayPasswd = !isDisplayPasswd"
+          :append-icon="isDisplayPasswd ? 'mdi-eye' : 'mdi-eye-off'"
+          :rules="[rules.passwdReq, rules.passwdMin]"
+          :type="isDisplayPasswd ? 'text' : 'password'"
+          :disabled="isRsvDisable"
+        ></v-text-field>
       </div>
-      <div id="rsv_btn_div">
-        <v-btn elevation="2" @click="rsv_btn">예약하기</v-btn>
+      <v-alert v-model="alert" dense type="error" dark dismissible id="alert">
+        올바른 예약 정보를 입력해주세요!
+      </v-alert>
+      <div id="rsvBtnDiv">
+        <v-btn elevation="2" @click="rsvBtn" :disabled="isRsvDisable">
+          예약하기
+        </v-btn>
       </div>
     </div>
   </div>
 </template>
   
 <script>
+//라이브러리 추가
+import axios from "axios";
+
+//BookDetail.vue 컴포넌트 관리
 export default {
   name: "BookDetails",
+  //컴포넌트가 사용하는 변수 정의 및 초기화(비동기 사용 불가능)
   data() {
     return {
-      stock_list: [
-        {
-          status: "A",
-          price: 9000,
-        },
-        {
-          status: "B",
-          price: 8000,
-        },
-        {
-          status: "C",
-          price: 7000,
-        },
-      ],
-      rsv_list: [
-        {
-          time: "15:30",
-        },
-        {
-          time: "16:30",
-        },
-        {
-          time: "17:30",
-        },
-      ],
-      menu: false,
-      dates: null,
+      //책 정보 변수
+      bookTitle: "로딩 중",
+      bookWriter: "로딩 중",
+      bookPublisher: "로딩 중",
+      bookId: null,
+      //예약 가능한 지
+      isRsv: "로딩 중",
+      //재고 변수
+      stockList: [],
+      rsvList: [],
+      isExistStock: true,
+      isRsvDisable: false,
+      //예약 관련 변수
+      dateMenu: false,
+      timeModal: false,
+      date: null,
       time: null,
-      modal: false,
-      isClickedDate: null,
+      isClickedDate: false,
+      isDisplayPasswd: false,
+      studentId: "",
+      password: "",
+      alert: false,
+      //input 요소 관련 규칙 설정
+      rules: {
+        sIdReq: () => this.sIdRule() || "학번을 제대로 입력해주세요",
+        passwdReq: () => this.passwdRule()[0] || "비밀번호를 입력해주세요.",
+        passwdMin: () =>
+          this.passwdRule()[1] || "적어도 8자리 이상 입력해주세요",
+      },
     };
   },
+  //컴포넌트가 사용하는 메소드 정의
   methods: {
-    rsv_btn: function () {
-      this.rsv_list = [
-        {
-          time: "14:30",
-        },
-        {
-          time: "16:30",
-        },
-        {
-          time: "17:30",
-        },
-      ];
+    //예약버튼
+    rsvBtn: function () {
+      if (!(this.sIdRule() && this.passwdRule()[0] && this.passwdRule()[1])) {
+        this.alert = true;
+      } else {
+        this.alert = false;
+      }
     },
+    //각종 rule 함수
+    sIdRule: function () {
+      return this.studentId.length == 8 && this.isStudentId();
+    },
+    passwdRule: function () {
+      return [this.password != 0, this.password.length >= 8];
+    },
+    isStudentId: function () {
+      var re = new RegExp("^[0-9]+$");
+      return re.test(this.studentId);
+    },
+    //api 책 정보 받아오기
+    getBookInfo: function () {
+      let urlBody =
+        "https://us-central1-kit-fleamarket.cloudfunctions.net/books?title=";
+      let title = "디지털 시스템 실험";
+      axios
+        .get(urlBody + title)
+        .then((Response) => {
+          let bookInfo = Response.data[0];
+          this.bookId = bookInfo.id;
+          this.bookTitle = bookInfo.title;
+          this.bookWriter = bookInfo.auther;
+          this.bookPublisher = bookInfo.publisher;
+        })
+        .catch((Error) => {
+          console.log(Error);
+        });
+    },
+    //api 책 재고 받아오기
+    getBookStock: function () {
+      let urlBody =
+        "https://us-central1-kit-fleamarket.cloudfunctions.net/books/" +
+        this.bookId +
+        "/stocks";
+      axios
+        .get(urlBody)
+        .then((Response) => {
+          this.stockList = Response.data;
+          if (this.stockList.length == 0) {
+            this.isRsv = "매물 없음";
+            this.isExistStock = false;
+            //this.isRsvDisable = true;
+          }
+        })
+        .catch((Error) => {
+          console.log(Error);
+        });
+    },
+  },
+  //DOM을 업데이트 해서 view refresh하는 부분(비동기 사용 가능)
+  mounted: function () {
+    this.getBookInfo();
+    this.getBookStock();
   },
 };
 </script>
 
 <style scoped>
-#book_info_wrap {
+#bookInfoWrap {
   display: flex;
   justify-content: center;
 }
-#book_info {
+#bookInfo {
   max-width: 400px;
   padding-top: min(5vw, 20px);
   font-family: "SCRegular";
 }
-#titld_div {
+#titleDiv {
   margin-bottom: min(5vw, 20px);
+}
+#title,
+#available {
+  display: inline-flex;
 }
 #title {
   font-family: "SCBold";
@@ -238,27 +324,32 @@ export default {
   margin-top: min(2.5vw, 10px);
   margin-bottom: min(3vw, 12px);
 }
-#stock_title {
+#stockTitle {
   font-family: "SCBold";
   font-size: min(6.5vw, 26px);
 }
-#stock_cnt {
+#stockCnt {
   font-size: min(4vw, 16px);
   font-family: "SCRegular";
   margin-bottom: min(2.5vw, 10px);
 }
-#stock_table_title {
+#stockTableTitle {
   text-align: center;
 }
-#stock_table {
+#stockTable {
   text-align: center;
   font-size: min(3vw, 12px);
 }
-#time_list {
+#timeList {
   text-align: center;
 }
-#rsv_btn_div {
+#rsvBtnDiv {
+  margin-top: min(2vw, 8px);
+  margin-bottom: min(8vw, 32px);
   text-align: right;
+}
+#alert {
+  margin-top: min(1.5vw, 6px);
 }
 
 /* vuetify 설정 부분 건드리는 css */
