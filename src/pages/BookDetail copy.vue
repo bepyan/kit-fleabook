@@ -1,7 +1,7 @@
 <template>
   <div id="bookInfoWrap">
     <div id="bookInfo">
-      <div style="width: min(90vw, 360px)"></div>
+      <div style="width: min(100vw, 700px)"></div>
       <div>
         <div id="titleDiv">
           <span id="title">{{ bookTitle }}</span>
@@ -121,10 +121,10 @@
   
 <script>
 //라이브러리 추가
-import axios from "axios";
-import StockList from "../components/StockList.vue";
-import DatePicker from "../components/DatePicker.vue";
-import TimePicker from "../components/TimePicker.vue";
+import { addBookRsv, getBookStock, getBookRsv } from "../api/index";
+import StockList from "../components/detail/StockList.vue";
+import DatePicker from "../components/detail/DatePicker_backup.vue";
+import TimePicker from "../components/detail/TimeStampPicker.vue";
 
 //BookDetail.vue 컴포넌트 관리
 export default {
@@ -205,20 +205,11 @@ export default {
           title: this.bookTitle,
           password: this.password,
           studentId: this.studentId,
+          name: this.name,
           time: timestamp,
           date: timestamp,
         };
-        let urlBody =
-          "https://us-central1-kit-fleamarket.cloudfunctions.net/books/" +
-          this.bookId +
-          "/reservations";
-        let config = {
-          method: "post",
-          url: urlBody,
-          headers: {},
-          data: data,
-        };
-        axios(config)
+        addBookRsv({ bookId: this.bookId, data })
           .then((Response) => {
             console.log(Response);
             if (Response.status == 201) {
@@ -266,6 +257,7 @@ export default {
     getTime: function (time) {
       this.time = time;
     },
+
     //각종 rule 함수
     sIdRule: function () {
       return this.studentId.length == 8 && this.isStudentId();
@@ -276,71 +268,6 @@ export default {
     isStudentId: function () {
       var re = new RegExp("^[0-9]+$");
       return re.test(this.studentId);
-    },
-    //api 책 정보 받아오기
-    getBookInfo: function () {
-      let urlBody =
-        "https://us-central1-kit-fleamarket.cloudfunctions.net/books?title=";
-      let title = "이름모를책";
-      axios
-        .get(urlBody + title)
-        .then((Response) => {
-          let bookInfo = Response.data[0];
-          console.log(bookInfo);
-          this.bookId = bookInfo.id;
-          this.bookTitle = bookInfo.title;
-          this.bookWriter = bookInfo.auther;
-          this.bookPublisher = bookInfo.publisher;
-          this.stockCnt = bookInfo.stockCount;
-          this.rsvCnt = bookInfo.reservationCount;
-          if (this.stockCnt == this.rsvCnt) {
-            this.isRsv = "예약 불가능";
-            this.isRsvDisable = true;
-          } else {
-            this.isRsv = "예약 가능";
-          }
-          this.getBookStock();
-          this.getBookRsv();
-        })
-        .catch((Error) => {
-          console.log(Error);
-        });
-    },
-    //api 책 재고 받아오기
-    getBookStock: function () {
-      let urlBody =
-        "https://us-central1-kit-fleamarket.cloudfunctions.net/books/" +
-        this.bookId +
-        "/stocks";
-      axios
-        .get(urlBody)
-        .then((Response) => {
-          this.stockList = Response.data;
-          console.log(this.stockList);
-          if (this.stockList.length == 0) {
-            this.isRsv = "매물 없음";
-            this.isExistStock = false;
-            this.isRsvDisable = true;
-          }
-        })
-        .catch((Error) => {
-          console.log(Error);
-        });
-    },
-    getBookRsv: function () {
-      let urlBody =
-        "https://us-central1-kit-fleamarket.cloudfunctions.net/books/" +
-        this.bookId +
-        "/reservations";
-      axios
-        .get(urlBody)
-        .then((Response) => {
-          this.rsvRawList = Response.data;
-          console.log(this.rsvRawList);
-        })
-        .catch((Error) => {
-          console.log(Error);
-        });
     },
     setRsvList: function () {
       var re = new RegExp("[0-9]+-[0-9]+-[0-9]+-");
@@ -391,11 +318,13 @@ export default {
 #bookInfoWrap {
   display: flex;
   justify-content: center;
+  padding: min(5vw, 20px);
 }
 #bookInfo {
-  max-width: 400px;
+  max-width: 700px;
   padding: min(5vw, 20px);
   font-family: "SCRegular";
+  background-color: #ffffff;
 }
 #titleDiv {
   margin-bottom: min(5vw, 20px);

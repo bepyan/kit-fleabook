@@ -1,40 +1,61 @@
 <template>
-  <v-simple-table id="stockTable" dense>
-    <template v-slot:default>
-      <thead>
-        <tr>
-          <th>상태</th>
-          <th>가격</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(stock, index) in stockList"
-          :key="(stock, index)"
-          v-bind:id="index"
-        >
-          <td>{{ stock.state }}</td>
-          <td>{{ stock.price }}</td>
-        </tr>
-      </tbody>
-    </template>
-  </v-simple-table>
+  <div>
+    <div id="stockTitle">
+      <p>재고 리스트</p>
+      <p id="stockCnt">(예약 가능 권수 : {{ stockCnt - rsvCnt }})</p>
+    </div>
+    <div id="stockTableDiv" v-if="isExistStock">
+      <v-simple-table id="stockTable" dense>
+        <template v-slot:default>
+          <thead>
+            <tr>
+              <th>상태</th>
+              <th>가격</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(stock, index) in stockList"
+              :key="(stock, index)"
+              v-bind:id="index"
+            >
+              <td>{{ stock.state }}</td>
+              <td>{{ stock.price }}</td>
+            </tr>
+          </tbody>
+        </template>
+      </v-simple-table>
+    </div>
+  </div>
 </template>
 
 <script>
 export default {
   name: "StockList",
-  props: ["stockList"],
+  props: ["stockInfo"],
   data: function () {
-    return {};
+    return this.stockInfo;
   },
 };
 </script>
 
 <style scoped>
+#stockTitle {
+  font-family: "SCBold";
+  font-size: min(6.5vw, 26px);
+}
+#stockCnt {
+  font-size: min(4vw, 16px);
+  font-family: "SCRegular";
+  margin-bottom: min(2.5vw, 10px);
+}
+#stockTableTitle {
+  text-align: center;
+}
 #stockTable {
   text-align: center;
 }
+
 /* vuetify 설정 부분 건드리는 css */
 .v-data-table > .v-data-table__wrapper > table > tbody > tr > td,
 .v-data-table > .v-data-table__wrapper > table > thead > tr > td,
