@@ -1,17 +1,27 @@
 <template>
   <v-container>
     <v-text-field
-      label="도서 제목"
+      label="제목, 출판사, 저자 검색"
       v-model="search"
       solo
       clearable
-      prepend-inner-icon="mdi-cog"
+      prepend-icon="mdi-cog"
       append-icon="mdi-magnify"
-      @click:prepend-inner="onSearch()"
       @click:append="onSearch()"
       @keyup.enter="onSearch()"
-      @click:clear="onClear"
-    ></v-text-field>
+      @click:clear="onClear()"
+    >
+      <template v-slot:prepend>
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-icon v-bind="attrs" v-on="on" @click="onFilter()">
+              {{renderIcon()}}
+            </v-icon>
+          </template>
+          {{renderTooltip()}}
+        </v-tooltip>
+      </template>
+    </v-text-field>
   </v-container>
 </template>
 
@@ -23,16 +33,31 @@ export default {
   },
   props: ["text"],
   data: () => ({
-    search: "text"
+    search: "",
+    filter: false,
   }),
+  created() {
+    this.search = this.text ? this.text : "";
+  },
   methods: {
     onSearch() {
-      sessionStorage.setItem('search', this.search);
+      sessionStorage.setItem("search", this.search);
       this.$emit("eventData", this.search);
     },
     onClear() {
       this.search = "";
-      sessionStorage.removeItem('search');
+      sessionStorage.setItem("search", "");
+      this.onSearch();
+    },
+    onFilter(){
+      this.filter = !this.filter
+      this.$emit("filterEvent", this.filter)
+    },
+    renderTooltip() {
+      return this.filter ? "모든 도서 보기" : "예약 가능 도서만 보기";
+    },
+    renderIcon() {
+      return this.filter ? "mdi-filter" : "mdi-filter-remove-outline";
     }
   },
 };
@@ -43,7 +68,7 @@ export default {
   position: fixed;
   padding: 0 20px 0 0;
   z-index: 1000;
-  & > .v-input{
+  & > .v-input {
     max-width: 500px;
     margin: auto;
   }

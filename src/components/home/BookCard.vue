@@ -6,7 +6,7 @@
           {{ title }}
         </v-list-item-title>
         <v-list-item-subtitle>
-          {{ publisher }}. {{ auther }}.
+          {{ publisher }}. {{ author }}.
         </v-list-item-subtitle>
 
           <v-list-item-subtitle class="state">
@@ -27,7 +27,7 @@ export default {
   },
   methods: {
     onClick() {
-      this.$router.push({ path: "detail", params: { book: this.book } });
+      this.$router.push({ path: "book", query: { book: this.book } });
     },
   },
 };

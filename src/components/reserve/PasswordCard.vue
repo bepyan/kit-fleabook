@@ -23,7 +23,9 @@
 </template>
 
 <script>
+import { checkReservePassword } from '../../api';
 export default {
+  model: { prop: "itemId" },
   props: ["itemId"],
   data: () => ({
     text: "",
@@ -32,24 +34,23 @@ export default {
     errMessage: "",
   }),
   methods: {
-    onEdit(e) {
+    async onEdit(e) {
       e.preventDefault();
       if (!this.text) {
         this.errMessage = "입력해주세요.";
         return;
       }
-      this.loading = true;
-      setTimeout(() => (this.loading = false), 1000);
+      console.log(this.itemId)
 
-      console.log(this.itemId);
+      this.loading = true;
+      const { data } = await checkReservePassword({reservationId: this.itemId, password: this.text});
+      console.log(data)
+      this.loading = false;
       if (this.text !== "asdf") {
         this.errMessage = "틀린 비밀번호입니다.";
         return;
       }
-      // this.loading = true;
-      this.text = "";
-      this.errMessage = "";
-      this.$emit("gotoEdit");
+      this.$emit("gotoEdit", this.text);
     },
   },
 };

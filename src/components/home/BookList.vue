@@ -1,19 +1,14 @@
 <template>
   <v-container>
     <transition-group name="fade">
-      <div v-for="(book, i) in bookList" :key="i">
-        <book-card :book="book" />
+      <book-card :book="book" v-for="book in bookList" :key="book.id" />
+      <div :key="loading" v-if="isEmptySearchResult()" class="msg">
+        해당하는 도서가 없습니다 🥺
       </div>
     </transition-group>
 
     <div v-if="loading">
-      <div v-for="i in [1, 2, 3, 4, 5, 6, 7]" :key="i">
-        <v-skeleton-loader
-          class="skeleton"
-          tile
-          type="card-heading, list-item-two-line"
-        />
-      </div>
+      <card-skeleton v-for="i in [1, 2, 3, 4, 5, 6, 7]" :key="i" />
     </div>
   </v-container>
 </template>
@@ -21,78 +16,104 @@
 <script>
 import { getBooks } from "@/api/index";
 import BookCard from "./BookCard.vue";
-import tmpBooks from "../../assets/tmpBooks";
+import CardSkeleton from "./CardSkeleton.vue";
 
-const SEARCH_CNT = 5;
+const SEARCH_CNT = 8;
 
 export default {
-  components: { BookCard },
-  model: {
-    prop: "text",
-  },
-  props: ["text"],
+  components: { BookCard, CardSkeleton },
+  model: { prop: "text" },
+  props: ["text", "filter"],
   data: () => ({
-    bookList: tmpBooks,
+    booksDB: [],
+    searchList: [],
+    bookList: [],
     startIdx: 0,
     loading: false,
     reachBottom: false,
   }),
   async created() {
+    /* 탐색결과 스크롤의 끝 인식 */
     window.addEventListener("scroll", () => {
       this.reachBottom = this.bottomVisible();
     });
-    this.addBooks();
+    /* 책 DB 가져오기 */
+    this.loading = true;
+    const { data } = await getBooks();
+    this.booksDB = data;
+    this.loading = false;
+    this.search();
   },
   methods: {
+    isEmptySearchResult() {
+      return !this.loading && !this.bookList.length;
+    },
     bottomVisible() {
       const { clientHeight, scrollHeight } = document.documentElement;
       const bottomOfPage = clientHeight + window.scrollY + 100 >= scrollHeight;
       return bottomOfPage || scrollHeight < clientHeight;
     },
-    async addBooks() {
-      // 서버로부터 받은 데이터가 10개 미만이면
-      if (this.startIdx > 15) return;
-
-      this.loading = true;
-
-      const { data } = await getBooks();
-      this.bookList = [...this.bookList, ...data];
+    search() {
+      this.startIdx = 0;
+      this.bookList = [];
+      this.searchList = this.booksDB.filter((item) => {
+        const { title, publisher, author } = item;
+        return (
+          this.onFilter(item) &&
+          (title.includes(this.text) ||
+            publisher.includes(this.text) ||
+            author.includes(this.text))
+        );
+      });
+      this.getBookList();
+    },
+    getBookList() {
+      if (this.searchList.length <= this.startIdx) return;
+      /*  [...bookList, ...searchList]하면 버그 발생 주의  */
+      /*  splice는 실제로 자르기에 별도 객체(깊은 복사) 필요  */
+      this.bookList.push(
+        ...[...this.searchList].splice(this.startIdx, SEARCH_CNT)
+      );
       this.startIdx += SEARCH_CNT;
-      // if(this.bottomVisible())
-      //   this.addArr();
-
-      this.loading = false;
+    },
+    onFilter(book) {
+      // 필
+      return (this.filter && book.stockCount !== book.reservationCount) || !this.filter;
     },
   },
   watch: {
-    reachBottom(bottom) {
-      if (bottom) this.addBooks();
+    reachBottom(reachBottom) {
+      if (!reachBottom || this.searchList.length <= this.startIdx) return;
+
+      /* 인위적인 loading */
+      this.loading = true;
+      setTimeout(() => {
+        this.loading = false;
+        this.getBookList();
+      }, 300);
     },
-    text(text) {
-      console.log(text);
+    text() {
+      this.search();
+    },
+    filter() {
+      this.search();
     },
   },
 };
 </script>
 
 <style lang="scss" scoped>
-.skeleton {
-  max-width: 700px;
-  margin: auto;
-  margin-top: 1px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  & > :first-child {
-    height: 40px;
-  }
-  & > :last-child {
-    height: 64px;
-  }
-}
-
-.fade-enter-active {
+.fade-enter-active{
   transition: opacity 0.5s;
 }
-.fade-enter {
+.fade-leave-active{
+  transition: opacity 0.15s;
+}
+.fade-enter, .fade-leave-to{
   opacity: 0;
+}
+.msg {
+  margin-top: 3rem;
+  text-align: center;
 }
 </style>
