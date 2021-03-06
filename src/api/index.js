@@ -10,13 +10,13 @@ const searchReserve = (stdId) => {
 }
 
 /* My Reserve */
-const checkReservePassword = ({reserveId, password}) => {
+const checkReservePassword = ({ reserveId, password }) => {
   return axios.get(`${ip}/reservations/${reserveId}/password?password=${password}`);
 }
-const editReserve = ({reserveId, password, body}) => {
+const editReserve = ({ reserveId, password, body }) => {
   return axios.put(`${ip}/reservations/${reserveId}?password=${password}`, body)
 }
-const cancelReserve = ({bookId, reserveId, password}) => {
+const cancelReserve = ({ bookId, reserveId, password }) => {
   return axios.delete(`${ip}/books/${bookId}/reservations/${reserveId}?password=${password}`);
 }
 
@@ -35,4 +35,4 @@ const getBookRsv = ({ bookId }) => {
 }
 
 
-export {getBooks, searchReserve, checkReservePassword, editReserve, cancelReserve, addBookRsv, getBookInfo, getBookStock, getBookRsv}
+export { getBooks, searchReserve, checkReservePassword, editReserve, cancelReserve, addBookRsv, getBookInfo, getBookStock, getBookRsv }

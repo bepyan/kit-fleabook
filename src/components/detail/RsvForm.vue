@@ -26,6 +26,9 @@
       :type="isDisplayPasswd ? 'text' : 'password'"
       :disabled="isRsvDisable"
     ></v-text-field>
+    <p id="passwdWarningText">
+      비밀번호에 한글, 영어가 모두 들어갈 수 있으니 비밀번호를 잘 확인해주세요!
+    </p>
     <div id="alert">
       <v-alert v-model="alert" dense type="error" dark dismissible>
         {{ alertMessage }}
@@ -48,7 +51,7 @@ export default {
     this.reqInfo.rules = {
       sIdReq: () => this.sIdRule() || "학번을 제대로 입력해주세요",
       passwdReq: () => this.passwdRule()[0] || "비밀번호를 입력해주세요.",
-      passwdMin: () => this.passwdRule()[1] || "적어도 8자리 이상 입력해주세요",
+      passwdMin: () => this.passwdRule()[1] || "적어도 4자리 이상 입력해주세요",
     };
     console.log(this.reqInfo);
     return this.reqInfo;
@@ -56,6 +59,7 @@ export default {
   methods: {
     //예약버튼
     addRsv: function () {
+      this.todayInfo = new Date();
       if (
         !(
           this.sIdRule() &&
@@ -69,11 +73,18 @@ export default {
       } else if (!this.date || !this.hour || !this.minute) {
         this.alert = true;
         this.alertMessage = "날짜와 시간을 입력했는지 확인해주세요!";
+      } else if (
+        new Date(this.date + " " + this.hour + ":" + this.minute) <
+        this.todayInfo
+      ) {
+        this.alert = true;
+        this.alertMessage =
+          "입력한 날짜와 시간이 현재 시각보다 이전입니다. 다시 확인해주세요!";
       } else {
         this.alert = false;
         this.alertMessage = "";
         this.processRsv = true;
-        let data = {
+        const data = {
           title: this.bookTitle,
           password: this.password,
           studentId: this.studentId,
@@ -127,7 +138,7 @@ export default {
     },
     //각종 rule 함수
     sIdRule: function () {
-      return this.studentId.length == 8 && this.isStudentId();
+      return this.studentId.length === 8 && this.isStudentId();
     },
     passwdRule: function () {
       return [this.password != 0, this.password.length >= 4];
@@ -156,6 +167,11 @@ export default {
 #alert {
   text-align: center;
   margin-top: min(1.5vw, 6px);
+}
+#passwdWarningText {
+  margin: 0;
+  font-size: min(3vw, 12px);
+  color: #d97a7c;
 }
 /* vuetify 설정 부분 건드리는 css */
 .v-data-table > .v-data-table__wrapper > table > tbody > tr > td,

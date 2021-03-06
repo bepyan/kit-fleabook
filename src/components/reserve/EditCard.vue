@@ -2,13 +2,19 @@
   <v-card>
     <v-container>
       <v-card-title class="title">
-        <span class="font-weight-black">{{ item.title }}</span>
-        <span class="font-weight-thin">{{ item.id }}</span>
+        <v-tooltip right>
+          <template v-slot:activator="{ on, attrs }">
+            <span v-bind="attrs" v-on="on" class="font-weight-black">
+              {{ item.title }}
+            </span>
+          </template>
+          <span>도서번호 {{item.bookId}}</span>
+        </v-tooltip>
       </v-card-title>
-
+      
       <v-container class="inputs">
-        <date-picker :reservDate="item.date" @getDate="getDate"></date-picker>
-        <time-picker :reservTime="item.time" @getTime="getTime"></time-picker>
+        <date-picker :reservDate="date" @getDate="getDate"></date-picker>
+        <time-picker :reservTime="time" @getTime="getTime"></time-picker>
       </v-container>
     </v-container>
 
@@ -39,17 +45,19 @@ import TimePicker from "../TimePicker.vue";
 export default {
   components: { DatePicker, TimePicker },
   props: ["item"],
-  data: () => ({
-    date: "",
-    time: "",
-    msg: "예약 취소는 되돌릴 수 없습니다.",
-    loading: false,
-    reload: false
-  }),
+  data() {
+    return {
+      date: this.item.date,
+      time: this.item.time,
+      msg: "예약 취소는 되돌릴 수 없습니다.",
+      loading: false,
+      reload: false,
+    };
+  },
   methods: {
     close() {
       this.$emit("input", false);
-      if(this.reload) window.location.reload();
+      if (this.reload) window.location.reload();
     },
     onEdit() {
       const { id: reserveId, password } = this.item;
@@ -92,12 +100,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.title{
+.title {
   padding-bottom: 0;
-  & > :first-child{
+  & > :first-child {
     font-size: larger;
   }
-  & > :last-child{
+  & > :last-child {
     font-size: 10px;
     margin-left: 1rem;
   }
